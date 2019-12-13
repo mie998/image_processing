@@ -1,2 +1,6 @@
 /.idea/*
 .ipynb_checkpoints/*
+sample.ipynb
+data/*
+*/__pycache__/*
+*.npz

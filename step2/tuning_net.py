@@ -24,6 +24,27 @@ def random_array_generator_normal(size):
     return w, b
 
 
+def sigmoid(image_size, mid_node_num, vec):
+    n = image_size
+    m = mid_node_num
+    w, b = random_array_generator_normal((n ** 2, m))
+
+    y = [1 / (1 + math.exp(-(np.dot(w[i], vec) + b[i]))) for i in range(m)]
+    y = np.array(y)
+
+    return y
+
+
+def soft_max(vec):
+    vec = list(map(lambda x: np.exp(x), vec))
+    exp_sum = sum(vec)
+
+    y = [vec[i] / exp_sum for i in range(len(vec))]
+    y = np.array(y)
+
+    return y
+
+
 class NeuralNet(object):
 
     def __init__(self, idx, mid_node_num):
@@ -51,7 +72,7 @@ class NeuralNet(object):
 
     def mid_process(self):
         X = self.pre_process()
-        y = self.sigmoid(X)
+        y = sigmoid(self.image_size, self.mid_node_num, X)
         return y
 
     def post_process(self):
@@ -59,42 +80,19 @@ class NeuralNet(object):
         class_size = self.class_size
 
         w, b = random_array_generator_normal((len(y1), class_size))
-        a = []
-        for i in range(class_size):
-            a.append(np.dot(y1, w[i]) + b[i])
-
+        a = [np.dot(y1, w[i]) + b[i] for i in range(class_size)]
         a = np.array(a)
+
         return a
 
     def output(self):
         a = self.post_process()
         alpha = max(a)
 
-        y2 = self.soft_max(map(lambda x: x - alpha, a))
+        y2 = soft_max(map(lambda x: x - alpha, a))
         cls = self.Y
 
         return cross_entropy_error(y2, cls)
-
-    def sigmoid(self, vec):
-        y = []
-        n = self.image_size
-        m = self.mid_node_num
-        w, b = random_array_generator_normal((n**2, m))
-        for i in range(m):
-            y.append(1 / (1 + math.exp(-(np.dot(w[i], vec) + b[i]))))
-
-        y = np.array(y)
-        return y
-
-    def soft_max(self, vec):
-        y = []
-        vec = list(map(lambda x: np.exp(x), vec))
-        exp_sum = sum(vec)
-        for i in range(len(vec)):
-            y.append(vec[i] / exp_sum)
-
-        y = np.array(y)
-        return y
 
 
 def main():
@@ -109,8 +107,10 @@ def main():
     for idx in idxes:
         NN = NeuralNet(idx, mid_node_num)
         entropy += NN.output()
+        print("...")
 
-    print('mean of cross-entropy: {}'.format(entropy / float(number)))
+    mini_batch_cross_entropy = entropy / float(number)
+    print('mean of cross-entropy: {}'.format(mini_batch_cross_entropy))
 
 
 if __name__ == '__main__':
