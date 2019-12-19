@@ -4,4 +4,4 @@ sample.ipynb
 data/*
 */__pycache__/*
 *.npz
-.DS_Store/*
+.DS_Store
