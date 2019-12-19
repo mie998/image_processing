@@ -22,44 +22,84 @@ class ThreeLayerNeuralNet:
         self.lastLayer = SoftMaxWithLoss()
 
     def predict(self, x):
-        for layer in self.layers:
+        for layer in self.layers.values():
             x = layer.forward(x)
-
         return x
 
-    # def loss(self, x, t):
+    def loss(self, x, t):
+        y = self.predict(x)
+        return self.lastLayer.forward(y, t)
 
-    # def accuracy(self, x, t):
+    def accuracy(self, x, t):
+        y = self.predict(x)
+        ans = np.argmax(y, axis=1)
+        if t.ndim != 1:
+            t = np.argmax(t, axis=1)
+        accuracy = np.sum(ans == t) / float(x.shape[0])
 
-    # def gradient(self, x, t):
+        return accuracy
+
+    def gradient(self, x, t):
+        self.loss(x, t)
+
+        dout = 1
+        dout = self.lastLayer.backward(dout)
+        layers = list(self.layers.values())
+        layers.reverse()
+        for layer in layers:
+            dout = layer.backward(dout)
+
+        gradients = {}
+        gradients['w1'] = self.layers['affine1'].dw
+        gradients['b1'] = self.layers['affine1'].db
+        gradients['w2'] = self.layers['affine2'].dw
+        gradients['b2'] = self.layers['affine2'].db
+
+        return gradients
 
 
 def main():
-    np.random.seed(10)
+    np.random.seed(1)
 
-    iteration = 100
+    iteration = 10000
     batch_size = 100
     input_size = 784
-    hidden_size = 100
+    hidden_size = 50
     output_size = 10
     learning_rate = 0.01
+    image_size = 60000
+    epoch_size = image_size / batch_size
 
     train_losses = []
+    train_grads = []
+    train_accs = []
 
-    if os.path.isfile('train_data.npz') and os.path.isfile('test_data.npz'):
-        train_x, train_y = \
-            np.load('train_data.npz')['x'], np.load('train_data.npz')['y']
-        test_x, test_y = \
-            np.load('test_data.npz')['x'], np.load('test_data.npz')['y']
-    else:
-        train_x, train_y, test_x, test_y = create_cache()
+    train_x, train_y, test_x, test_y = read_MNIST();
 
-    print(train_x)
-
+    NN = ThreeLayerNeuralNet(input_size, hidden_size, output_size)
     for i in range(iteration):
-        batch_idxes = np.random.choice(60000, batch_size)
-        train_x_batch = train_x[batch_size]
-        train_y_batch = train_y[batch_size]
+        batch_idxes = np.random.choice(image_size, batch_size)
+        train_x_batch = train_x[batch_idxes]
+        train_y_batch = train_y[batch_idxes]
+        train_y_batch = to_one_hot_vector_batch(train_y_batch, output_size)
+
+        gradients = NN.gradient(train_x_batch, train_y_batch)
+        for key in ('w1', 'b1', 'w2', 'b2'):
+            NN.params[key] -= learning_rate * gradients[key]
+
+        loss = NN.loss(train_x_batch, train_y_batch)
+
+        if i % epoch_size == 0:
+            train_acc = NN.accuracy(train_x, train_y)
+            test_acc = NN.accuracy(test_x, test_y)
+            train_accs.append(train_acc)
+            train_losses.append(loss)
+            train_grads.append(gradients)
+            print("loss: {}".format(loss))
+            print("train accuracy: {}%".format(train_acc * 100))
+            print("test accuracy: {}%".format(test_acc * 100))
+
+    save_parameter(NN)
 
 
 if __name__ == '__main__':

@@ -78,7 +78,7 @@ class NeuralNet(object):
 
 
 def main():
-    np.seed(10)
+    np.random.seed(10)
     idx = int(input('select index of image in range 1 ~ 9999\n'))
     assert 0 <= idx <= 9999, 'error: input integer from 1 to 9999!'
 

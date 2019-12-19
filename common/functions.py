@@ -10,6 +10,17 @@ def sigmoid_grad(x):
 
 
 def softmax(x):
+    ###
+    # adapt to batch_transaction
+    # before transposition, np.exp(x) returns exp of vector that contains
+    # top elements of each batch, so results may become insane: transposition is necessary!
+    ###
+    if x.ndim == 2:
+        x = x.T
+        x = x - np.max(x, axis=0)
+        y = np.exp(x) / np.sum(np.exp(x), axis=0)
+        return y.T
+
     x = x - np.max(x)
     return np.exp(x) / np.sum(np.exp(x))
 
@@ -23,17 +34,11 @@ def cross_entropy_error(y, t):
         t = t.reshape(1, t.size)
         y = y.reshape(1, y.size)
 
-    sigma = 1e-7
+    delta = 1e-7
     batch_size = y.shape[0]
-    return -np.sum(np.log(y[np.arange(batch_size), t] + sigma)) / batch_size
+    return -np.sum(t * np.log(y + delta)) / batch_size
 
 
 def softmax_loss(x, t):
     y = softmax(x)
     return cross_entropy_error(y, t)
-
-
-def to_one_hot_vector(num, len):
-    v = np.zeros(len)
-    v[num] += 1
-    return v

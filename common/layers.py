@@ -16,7 +16,7 @@ class Sigmoid:
         return out
 
     def backward(self, dout):
-        dx = dout * (1.0 - y) * y
+        dx = dout * (1.0 - self.out) * self.out
 
         return dx
 
@@ -31,7 +31,7 @@ class Affine:
 
     def forward(self, x):
         self.x = x
-        out = np.dot(self.w, x) + self.b
+        out = np.dot(self.x, self.w) + self.b
 
         return out
 
@@ -52,11 +52,11 @@ class SoftMaxWithLoss:
     def forward(self, x, t):
         self.t = t
         self.y = softmax(x)
-        self.loss = cross_entropy_error(y, t)
+        self.loss = cross_entropy_error(self.y, self.t)
 
         return self.loss
 
-    def backward(self):
+    def backward(self, dout=1):
         batch_size = self.t.shape[0]
         dx = (self.y - self.t) / batch_size
 
