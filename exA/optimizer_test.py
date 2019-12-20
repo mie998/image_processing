@@ -18,6 +18,7 @@ class ThreeLayerNeuralNet:
         self.layers = OrderedDict()
         self.layers['affine1'] = Affine(w=self.params['w1'], b=self.params['b1'])
         self.layers['ReLU'] = ReLU()
+        self.layers['dropout'] = Dropout()
         self.layers['affine2'] = Affine(w=self.params['w2'], b=self.params['b2'])
         self.lastLayer = SoftMaxWithLoss()
 
