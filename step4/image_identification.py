@@ -6,8 +6,6 @@ import os
 import sys
 
 sys.path.append(os.pardir)
-from common.utils import *
-from common.functions import softmax
 from step3.back_propagation import *
 
 
