@@ -12,7 +12,6 @@ from step3.back_propagation import *
 
 
 def main():
-    np.random.seed(10)
     idx = int(input('select index of image in range 1 ~ 9999\n'))
     assert 0 <= idx <= 9999, 'error: input integer from 1 to 9999!'
 
@@ -20,7 +19,7 @@ def main():
     test_x_img = test_x[idx]
     test_y_ans = test_y[idx]
 
-    w1, b1, w2, b2 = read_parameter('learned_parameter.npz')
+    w1, b1, w2, b2 = read_parameter('../data/learned_parameter.npz')
     input_size = 784
     hidden_size = 50
     output_size = 10

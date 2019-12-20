@@ -20,18 +20,18 @@ def create_cache():
     test_x, test_y = mndata.load_testing()
     train_x, train_y, test_x, test_y = \
         np.array(train_x), np.array(train_y), np.array(test_x), np.array(test_y)
-    np.savez('train_data.npz', x=train_x, y=train_y)
-    np.savez('test_data.npz', x=test_x, y=test_y)
+    np.savez('../data/train_data.npz', x=train_x, y=train_y)
+    np.savez('../data/test_data.npz', x=test_x, y=test_y)
 
     return train_x, train_y, test_x, test_y
 
 
 def read_MNIST():
-    if os.path.isfile('train_data.npz') and os.path.isfile('test_data.npz'):
+    if os.path.isfile('../data/train_data.npz') and os.path.isfile('../data/test_data.npz'):
         train_x, train_y = \
-            np.load('train_data.npz')['x'], np.load('train_data.npz')['y']
+            np.load('../data/train_data.npz')['x'], np.load('../data/train_data.npz')['y']
         test_x, test_y = \
-            np.load('test_data.npz')['x'], np.load('test_data.npz')['y']
+            np.load('../data/test_data.npz')['x'], np.load('../data/test_data.npz')['y']
     else:
         train_x, train_y, test_x, test_y = create_cache()
 
@@ -40,7 +40,8 @@ def read_MNIST():
 
 def save_parameter(object):
     w1, b1, w2, b2 = object.params['w1'], object.params['b1'], object.params['w2'], object.params['b2']
-    np.savez('learned_parameter.npz', w1=w1, b1=b1, w2=w2, b2=b2)
+    print('b2: {}'.format(b2))
+    np.savez('../data/learned_parameter.npz', w1=w1, b1=b1, w2=w2, b2=b2)
 
 
 def read_parameter(file):
