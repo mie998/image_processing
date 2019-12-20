@@ -22,15 +22,18 @@ class Sigmoid:
 
 
 class ReLU:
+    def __init__(self):
+        self.mask = None
+
     def forward(self, x):
+        self.mask = (x <= 0)
         out = x.copy()
-        out[x <= 0] = 0
+        out[self.mask] = 0
 
         return out
 
     def backward(self, dout):
-        dout[dout <= 0] = 0
-        dout[dout > 0] = 0
+        dout[self.mask] = 0
         dx = dout
 
         return dx
@@ -54,6 +57,29 @@ class Affine:
         dx = np.dot(dout, self.w.T)
         self.dw = np.dot(self.x.T, dout)
         self.db = np.sum(dout, axis=0)
+
+        return dx
+
+
+class Dropout:
+    def __init__(self, drop_rate=0.3, is_test=False):
+        self.drop_rate = drop_rate
+        self.is_test = is_test
+        self.banish = None
+
+    def forward(self, x):
+        self.banish = np.random.choice(int(x.shape[0]), int(x.shape[0] * self.drop_rate))
+        out = x.copy()
+        if self.is_test:
+            out[self.banish] = 0
+        else:
+            out[self.banish] *= 1 - self.drop_rate
+
+        return out
+
+    def backward(self, dout):
+        dout[self.banish] = 0
+        dx = dout
 
         return dx
 
