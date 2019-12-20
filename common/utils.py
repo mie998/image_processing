@@ -14,6 +14,13 @@ def random_array_generator_normal(din_size, dout_size):
     return w, b
 
 
+def normalization(data):
+    max = np.max(data)
+    min = np.min(data)
+    data = (data - min) / (max - min)
+    return data
+
+
 def create_cache():
     mndata = MNIST('../data/')
     train_x, train_y = mndata.load_training()
@@ -40,7 +47,6 @@ def read_MNIST():
 
 def save_parameter(object):
     w1, b1, w2, b2 = object.params['w1'], object.params['b1'], object.params['w2'], object.params['b2']
-    print('b2: {}'.format(b2))
     np.savez('../data/learned_parameter.npz', w1=w1, b1=b1, w2=w2, b2=b2)
 
 

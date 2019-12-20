@@ -66,7 +66,6 @@ def main():
     input_size = 784
     hidden_size = 50
     output_size = 10
-    learning_rate = 0.01
     image_size = 60000
     epoch_size = image_size / batch_size
 
@@ -75,7 +74,6 @@ def main():
     train_accs = []
 
     train_x, train_y, test_x, test_y = read_MNIST()
-    train_x, test_x = normalization(train_x), normalization(test_x)
 
     NN = ThreeLayerNeuralNet(input_size, hidden_size, output_size)
     for i in range(iteration):
@@ -85,7 +83,15 @@ def main():
         train_y_batch = to_one_hot_vector_batch(train_y_batch, output_size)
 
         gradients = NN.gradient(train_x_batch, train_y_batch)
-        optimizer = SGD(learning_rate)
+
+        ### select optimizer for comparison
+        # optimizer = SGD(lr=0.01)
+        optimizer = Momentum(alpha=0.9, lr=0.01)
+        # optimizer = AdaGrad(lr=0.001, delta=1e-8)
+        # optimizer = RMSProp(lr=0.001, law=0.9, delta=1e-8)
+        # optimizer = AdaDelta(law=0.95, delta=1e-6)
+        # optimizer = Adam(alpha=0.001, beta_1=0.9, beta_2=0.999, delta=1e-8)
+
         optimizer.update(NN.params, gradients)
 
         loss = NN.loss(train_x_batch, train_y_batch)
@@ -96,7 +102,6 @@ def main():
             train_accs.append(train_acc)
             train_losses.append(loss)
             train_grads.append(gradients)
-            print("----- epoch{} -----".format(i / epoch_size))
             print("loss: {}".format(loss))
             print("train accuracy: {}%".format(train_acc * 100))
             print("test accuracy: {}%".format(test_acc * 100))
