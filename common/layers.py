@@ -22,25 +22,21 @@ class Sigmoid:
 
 
 class ReLU:
-    def __init__(self):
-        self.negative = None
-
     def forward(self, x):
-        self.negative = (x <= 0)
-        v = np.copy(x)
-        v[self.negative] = 0
+        out = x.copy()
+        out[x <= 0] = 0
 
-        return v
+        return out
 
     def backward(self, dout):
-        dout[self.negative] = 0
+        dout[dout <= 0] = 0
+        dout[dout > 0] = 0
         dx = dout
 
         return dx
 
 
 class Affine:
-
     def __init__(self, w, b):
         self.w = w
         self.b = b

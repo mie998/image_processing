@@ -19,7 +19,8 @@ class Momentum:
     def update(self, params, grads):
         if self.velocity is None:
             velocity = {}
-            for key, val in params.keys():
+            for key in params.keys():
+                val = params[key]
                 velocity[key] = np.zeros_like(val)
             self.velocity = velocity
 
@@ -37,7 +38,8 @@ class AdaGrad:
     def update(self, params, grads):
         if self.h is None:
             h = {}
-            for key, val in params.keys():
+            for key in params.keys():
+                val = params[key]
                 h[key] = np.zeros_like(val)
                 h[key] += self.delta
             self.h = h
@@ -57,7 +59,8 @@ class RMSProp:
     def update(self, params, grads):
         if self.h is None:
             h = {}
-            for key, val in params.keys():
+            for key in params.keys():
+                val = params[key]
                 h[key] = np.zeros_like(val)
             self.h = h
 
@@ -79,7 +82,8 @@ class AdaDelta:
             h = {}
             s = {}
             dw = {}
-            for key, val in params.keys():
+            for key in params.keys():
+                val = params[key]
                 h[key] = np.zeros_like(val)
                 s[key] = np.zeros_like(val)
                 dw[key] = np.zeros_like(val)
@@ -112,7 +116,8 @@ class Adam:
             v = {}
             m_ = {}
             v_ = {}
-            for key, val in params.keys():
+            for key in params.keys():
+                val = params[key]
                 m[key] = np.zeros_like(val)
                 v[key] = np.zeros_like(val)
                 m_[key] = np.zeros_like(val)
@@ -123,9 +128,9 @@ class Adam:
             self.v_ = v_
 
         self.t += 1
-        for key in params.key():
-            self.m[key] = self.beta_1 * m + (1 - self.beta_1) * grads[key]
-            self.v[key] = self.beta_2 * v + (1 - self.beta_2) * grads[key] * grads[key]
+        for key in params.keys():
+            self.m[key] = self.beta_1 * m[key] + (1 - self.beta_1) * grads[key]
+            self.v[key] = self.beta_2 * v[key] + (1 - self.beta_2) * grads[key] * grads[key]
             self.m_[key] = self.m[key] / (1 - self.beta_1 ** self.t)
             self.v_[key] = self.v[key] / (1 - self.beta_2 ** self.t)
             params[key] -= self.alpha * self.m_[key] / (np.sqrt(self.v_[key]) + self.delta)

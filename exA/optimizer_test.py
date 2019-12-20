@@ -17,7 +17,7 @@ class ThreeLayerNeuralNet:
             'b2': random_array_generator_normal(hidden_size, output_size)[1]}
         self.layers = OrderedDict()
         self.layers['affine1'] = Affine(w=self.params['w1'], b=self.params['b1'])
-        self.layers['sigmoid'] = Sigmoid()
+        self.layers['ReLU'] = ReLU()
         self.layers['affine2'] = Affine(w=self.params['w2'], b=self.params['b2'])
         self.lastLayer = SoftMaxWithLoss()
 
@@ -74,6 +74,8 @@ def main():
     train_accs = []
 
     train_x, train_y, test_x, test_y = read_MNIST()
+    train_x = normalization(train_x)
+    test_x = normalization(test_x)
 
     NN = ThreeLayerNeuralNet(input_size, hidden_size, output_size)
     for i in range(iteration):
@@ -86,11 +88,11 @@ def main():
 
         ### select optimizer for comparison
         # optimizer = SGD(lr=0.01)
-        optimizer = Momentum(alpha=0.9, lr=0.01)
+        # optimizer = Momentum(alpha=0.9, lr=0.01)
         # optimizer = AdaGrad(lr=0.001, delta=1e-8)
         # optimizer = RMSProp(lr=0.001, law=0.9, delta=1e-8)
         # optimizer = AdaDelta(law=0.95, delta=1e-6)
-        # optimizer = Adam(alpha=0.001, beta_1=0.9, beta_2=0.999, delta=1e-8)
+        optimizer = Adam(alpha=0.001, beta_1=0.9, beta_2=0.999, delta=1e-8)
 
         optimizer.update(NN.params, gradients)
 
@@ -102,11 +104,10 @@ def main():
             train_accs.append(train_acc)
             train_losses.append(loss)
             train_grads.append(gradients)
+            print("----- epoch{} -----".format(i / epoch_size))
             print("loss: {}".format(loss))
             print("train accuracy: {}%".format(train_acc * 100))
             print("test accuracy: {}%".format(test_acc * 100))
-
-    save_parameter(NN)
 
 
 if __name__ == '__main__':
