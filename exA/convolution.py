@@ -8,7 +8,7 @@ from common.utils import *
 from common.optimizer import *
 
 
-class NeuralNet:
+class ConvolutionalNeuralNet:
     def __init__(self, input_size, hidden_size, output_size):
         self.params = {
             'w1': random_array_generator_normal(input_size, hidden_size)[0],
@@ -66,21 +66,23 @@ def main():
 
     iteration = 10000
     batch_size = 100
-    input_size = 784
+    input_size = 3072
     hidden_size = 50
     output_size = 10
-    image_size = 60000
+    image_size = 10000
     epoch_size = image_size / batch_size
 
     train_losses = []
     train_grads = []
     train_accs = []
 
-    train_x, train_y, test_x, test_y = read_MNIST()
+    pickle = '../data/cifar-10-batches-py/'
+    train_x, train_y = unpickle(pickle + 'data_batch_1')
+    test_x, test_y = unpickle(pickle + 'test_batch')
     train_x = normalization(train_x)
     test_x = normalization(test_x)
 
-    NN = NeuralNet(input_size, hidden_size, output_size)
+    NN = ConvolutionalNeuralNet(input_size, hidden_size, output_size)
     for i in range(iteration):
         batch_idxes = np.random.choice(image_size, batch_size)
         train_x_batch = train_x[batch_idxes]

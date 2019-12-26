@@ -45,6 +45,16 @@ def read_MNIST():
     return train_x, train_y, test_x, test_y
 
 
+def unpickle(file):
+    import pickle
+    with open(file, 'rb') as fo:
+        dict = pickle.load(fo, encoding='bytes')
+    X = np.array(dict[b'data'])
+    X.reshape((X.shape[0], 3, 32, 32))
+    Y = np.array(dict[b'labels'])
+    return X, Y
+
+
 def save_parameter(object):
     w1, b1, w2, b2 = object.params['w1'], object.params['b1'], object.params['w2'], object.params['b2']
     np.savez('../data/learned_parameter.npz', w1=w1, b1=b1, w2=w2, b2=b2)
