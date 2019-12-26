@@ -17,8 +17,8 @@ class ThreeLayerNeuralNet:
             'b2': random_array_generator_normal(hidden_size, output_size)[1]}
         self.layers = OrderedDict()
         self.layers['affine1'] = Affine(w=self.params['w1'], b=self.params['b1'])
+        self.layers['batch_normalization'] = BatchNormalization(beta=0.0, gamma=1.0, delta=1e-7, is_test=False)
         self.layers['ReLU'] = ReLU()
-        self.layers['dropout'] = Dropout()
         self.layers['affine2'] = Affine(w=self.params['w2'], b=self.params['b2'])
         self.lastLayer = SoftMaxWithLoss()
 

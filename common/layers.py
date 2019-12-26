@@ -84,6 +84,53 @@ class Dropout:
         return dx
 
 
+class BatchNormalization:
+    def __init__(self, beta=0.0, gamma=1.0, delta=1e-7, is_test=False):
+        self.beta = beta
+        self.gamma = gamma
+        self.delta = delta
+        self.is_test = is_test
+        self.batch_size = None
+        self.mean = None
+        self.variance = None
+        self.x = None
+        self.xvar = None
+        self.dbeta = None
+        self.dgamma = None
+
+    def forward(self, x):
+        self.batch_size = x.shape[0]
+        node_size = x.shape[1]
+        self.x = x
+        mean_node = sum(x) / node_size
+        mean = sum(mean_node) / self.batch_size
+        variance_node = sum((x - mean) ** 2) / node_size
+        variance = sum(variance_node) / self.batch_size
+        self.mean = mean
+        self.variance = variance
+        self.xvar = (x - mean) / np.sqrt(variance + self.delta)
+        if not self.is_test:
+            out = self.gamma * self.xvar + self.beta
+        else:
+            out = self.gamma / np.sqrt(variance + self.delta) * x + \
+                  self.beta - self.gamma * mean / (variance + self.delta)
+        return out
+
+    def backward(self, dout):
+        d_xvar = self.gamma * dout
+        d_variance = -1 / 2 * (self.variance + self.delta) ** (-3 / 2) * \
+                     np.sum((self.x - self.mean) * d_xvar)
+        d_mean = -1 / np.sqrt(self.variance + self.gamma) * d_xvar + \
+                 -2 * d_variance * np.sum(self.x - self.mean) / self.batch_size
+        dx = d_xvar * 1 / np.sqrt(self.variance + self.gamma) + \
+             d_variance * 2 * (self.x - self.mean) / self.batch_size + \
+             d_mean / self.batch_size
+        self.dgamma = np.sum(dout * self.xvar)
+        self.dbeta = dout.sum(axis=0)
+
+        return dx
+
+
 class SoftMaxWithLoss:
     def __init__(self):
         self.loss = None
