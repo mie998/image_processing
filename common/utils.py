@@ -85,3 +85,38 @@ def to_one_hot_vector_batch(vec, output_size):
         v[i, vec[i]] += 1
 
     return v
+
+
+def im2col(input_data, filter_h, filter_w, stride=1, padding=0):
+    N, C, H, W = input_data.shape
+    out_h = (H + 2 * padding - filter_h) // stride + 1
+    out_w = (W + 2 * padding - filter_w) // stride + 1
+
+    img = np.pad(input_data, ((0, 0), (0, 0), (padding, padding), (padding, padding)), 'constant', constant_values=0)
+    col = np.zeros((N, C, filter_h, filter_w, out_h, out_w))
+
+    for h in range(filter_h):
+        h_bound = h + stride * out_h
+        for w in range(filter_w):
+            w_bound = w + stride * out_w
+            col[:, :, h, w, :, :] = img[:, :, h:h_bound:stride, w:w_bound:stride]
+
+    col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1)
+    return col
+
+
+def col2im(col, input_shape, filter_h, filter_w, stride=1, padding=0):
+    N, C, H, W = input_shape
+    out_h = (H + 2 * padding - filter_h) // stride + 1
+    out_w = (W + 2 * padding - filter_w) // stride + 1
+    col = col.reshape(N, out_h, out_w, C, filter_h, filter_w).transpose(0, 3, 4, 5, 1, 2)
+
+    img = np.zeros((N, C, H + 2 * padding + stride - 1, W + 2 * padding + stride - 1))
+
+    for h in range(filter_h):
+        h_bound = h + stride * out_h
+        for w in range(filter_w):
+            w_bound = w + stride * out_w
+            img[:, :, h:h_bound:stride, w:w_bound:stride] += col[:, :, h, w, :, :]
+
+    return img[:, :, padding:(H + padding), padding:(W + padding)]

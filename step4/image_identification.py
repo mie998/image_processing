@@ -14,8 +14,8 @@ def main():
     assert 0 <= idx <= 9999, 'error: input integer from 1 to 9999!'
 
     _, _, test_x, test_y = read_MNIST()
-    test_x_img = test_x[idx]
-    test_y_ans = test_y[idx]
+    test_x_img, test_y_ans = test_x[idx], test_y[idx]
+    test_x_img = normalization(test_x_img)
 
     w1, b1, w2, b2 = read_parameter('../data/learned_parameter.npz')
     input_size = 784
