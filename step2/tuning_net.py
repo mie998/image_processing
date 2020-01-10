@@ -97,7 +97,7 @@ class NeuralNet(object):
 
 def main():
     np.random.seed(10)
-    number = int(input('how many images do you want to use for learning?\n'))
+    number = int(input('select batch size that you want to use for learning!\n'))
     assert 0 <= number <= 60000, 'error: input integer from 1 to 60000!'
 
     idxes = np.random.choice(60000, number)

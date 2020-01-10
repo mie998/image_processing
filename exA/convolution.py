@@ -9,17 +9,33 @@ from common.optimizer import *
 
 
 class ConvolutionalNeuralNet:
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self, input_shape, hidden_size, output_size, conv_params):
+        filter_num = conv_params['filter_num']
+        filter_size = conv_params['filter_size']
+        filter_stride = conv_params['filter_stride']
+        filter_padding = conv_params['filter_padding']
+        pool_size = conv_params['pool_size']
+        pool_stride = conv_params['pool_stride']
+        pool_padding = conv_params['pool_padding']
+        channel_num = input_shape[0]
+        conv_output_size = (input_shape[2] + 2 * filter_padding - filter_size) // filter_stride + 1
+        pool_output_num = filter_num * ((conv_output_size + 2 * pool_padding - pool_size) // pool_stride + 1) ** 2
         self.params = {
-            'w1': random_array_generator_normal(input_size, hidden_size)[0],
-            'b1': random_array_generator_normal(input_size, hidden_size)[1],
-            'w2': random_array_generator_normal(hidden_size, output_size)[0],
-            'b2': random_array_generator_normal(hidden_size, output_size)[1]}
+            'w1': np.random.randn(filter_num, channel_num, filter_size, filter_size),
+            'b1': np.random.randn(filter_num),
+            'w2': random_array_generator_normal(pool_output_num, hidden_size)[0],
+            'b2': random_array_generator_normal(pool_output_num, hidden_size)[1],
+            'w3': random_array_generator_normal(hidden_size, output_size)[0],
+            'b3': random_array_generator_normal(hidden_size, output_size)[1],
+        }
         self.layers = OrderedDict()
-        self.layers['affine1'] = Affine(w=self.params['w1'], b=self.params['b1'])
-        self.layers['batch_normalization'] = BatchNormalization(beta=0.0, gamma=1.0, delta=1e-7, is_test=False)
-        self.layers['ReLU'] = ReLU()
-        self.layers['affine2'] = Affine(w=self.params['w2'], b=self.params['b2'])
+        self.layers['convolution'] = Convolution(w=self.params['w1'], b=self.params['b1'],
+                                                 stride=filter_stride, padding=filter_padding)
+        self.layers['relu1'] = ReLU()
+        self.layers['pooling'] = Pooling(pool_h=pool_size, pool_w=pool_size, stride=pool_stride, padding=pool_padding)
+        self.layers['affine1'] = Affine(w=self.params['w2'], b=self.params['b2'])
+        self.layers['relu2'] = ReLU()
+        self.layers['affine2'] = Affine(w=self.params['w3'], b=self.params['b3'])
         self.lastLayer = SoftMaxWithLoss()
 
     def predict(self, x):
@@ -51,12 +67,12 @@ class ConvolutionalNeuralNet:
             dout = layer.backward(dout)
 
         gradients = {}
-        gradients['w1'] = self.layers['affine1'].dw
-        gradients['b1'] = self.layers['affine1'].db
-        gradients['w2'] = self.layers['affine2'].dw
-        gradients['b2'] = self.layers['affine2'].db
-        gradients['beta'] = self.layers['batch_normalization'].dbeta
-        gradients['gamma'] = self.layers['batch_normalization'].dgamma
+        gradients['w1'] = self.layers['convolution'].dw
+        gradients['b1'] = self.layers['convolution'].db
+        gradients['w2'] = self.layers['affine1'].dw
+        gradients['b2'] = self.layers['affine1'].db
+        gradients['w3'] = self.layers['affine2'].dw
+        gradients['b3'] = self.layers['affine2'].db
 
         return gradients
 
@@ -66,11 +82,12 @@ def main():
 
     iteration = 10000
     batch_size = 100
-    input_size = 3072
     hidden_size = 50
     output_size = 10
-    image_size = 10000
-    epoch_size = image_size / batch_size
+    sifar_img_num = 10000
+    sifar_channel_num = 3
+    sifar_img_size = 32
+    epoch_size = sifar_img_num / batch_size
 
     train_losses = []
     train_grads = []
@@ -81,15 +98,29 @@ def main():
     test_x, test_y = unpickle(pickle + 'test_batch')
     train_x = normalization(train_x)
     test_x = normalization(test_x)
+    train_x = train_x.reshape(sifar_img_num, sifar_channel_num, sifar_img_size, sifar_img_size)
+    test_x = test_x.reshape(sifar_img_num, sifar_channel_num, sifar_img_size, sifar_img_size)
 
-    NN = ConvolutionalNeuralNet(input_size, hidden_size, output_size)
+    # input_shape[1] + padding*2 - filter_size が filter_stride の倍数になるようにパラメータを設定する
+    conv_params = {
+        'filter_num': 4,
+        'filter_size': 4,
+        'filter_stride': 1,
+        'filter_padding': 0,
+        'pool_size': 4,
+        'pool_stride': 1,
+        'pool_padding': 0,
+    }
+    CNN = ConvolutionalNeuralNet((sifar_channel_num, sifar_img_size, sifar_img_size),
+                                 hidden_size, output_size, conv_params)
+
     for i in range(iteration):
-        batch_idxes = np.random.choice(image_size, batch_size)
+        batch_idxes = np.random.choice(sifar_img_num, batch_size)
         train_x_batch = train_x[batch_idxes]
         train_y_batch = train_y[batch_idxes]
         train_y_batch = to_one_hot_vector_batch(train_y_batch, output_size)
 
-        gradients = NN.gradient(train_x_batch, train_y_batch)
+        gradients = CNN.gradient(train_x_batch, train_y_batch)
 
         ### select optimizer for comparison
         # optimizer = SGD(lr=0.01)
@@ -99,18 +130,19 @@ def main():
         # optimizer = AdaDelta(law=0.95, delta=1e-6)
         optimizer = Adam(alpha=0.001, beta_1=0.9, beta_2=0.999, delta=1e-8)
 
-        optimizer.update(NN.params, gradients)
+        optimizer.update(CNN.params, gradients)
 
-        loss = NN.loss(train_x_batch, train_y_batch)
+        loss = CNN.loss(train_x_batch, train_y_batch)
+        print("loss: {}".format(loss))
 
         if i % epoch_size == 0:
-            train_acc = NN.accuracy(train_x, train_y)
-            test_acc = NN.accuracy(test_x, test_y)
+            train_acc = CNN.accuracy(train_x, train_y)
+            test_acc = CNN.accuracy(test_x, test_y)
             train_accs.append(train_acc)
             train_losses.append(loss)
             train_grads.append(gradients)
+            print('')
             print("----- epoch{} -----".format(i / epoch_size))
-            print("loss: {}".format(loss))
             print("train accuracy: {}%".format(train_acc * 100))
             print("test accuracy: {}%".format(test_acc * 100))
 

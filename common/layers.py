@@ -3,6 +3,7 @@ import sys
 
 sys.path.append(os.pardir)
 from common.functions import *
+from common.utils import *
 
 
 class Sigmoid:
@@ -46,9 +47,12 @@ class Affine:
         self.x = None
         self.dw = None
         self.db = None
+        self.input_shape = None
 
     def forward(self, x):
-        self.x = x
+        self.input_shape = x.shape
+        self.x = x.reshape(x.shape[0], -1)
+
         out = np.dot(self.x, self.w) + self.b
 
         return out
@@ -57,6 +61,8 @@ class Affine:
         dx = np.dot(dout, self.w.T)
         self.dw = np.dot(self.x.T, dout)
         self.db = np.sum(dout, axis=0)
+
+        dx = dx.reshape(self.input_shape)
 
         return dx
 
@@ -147,5 +153,85 @@ class SoftMaxWithLoss:
     def backward(self, dout=1):
         batch_size = self.t.shape[0]
         dx = (self.y - self.t) / batch_size
+
+        return dx
+
+
+class Convolution:
+    def __init__(self, w, b, stride=1, padding=0):
+        self.w = w
+        self.b = b
+        self.stride = stride
+        self.padding = padding
+        self.x = None
+        self.col = None
+        self.col_w = None
+        self.dw = None
+        self.db = None
+
+    def forward(self, x):
+        N, C, H, W = x.shape
+        FN, C, FH, FW = self.w.shape
+        out_h = (H + 2 * self.padding - FH) // self.stride + 1
+        out_w = (W + 2 * self.padding - FW) // self.stride + 1
+
+        col = im2col(x, FH, FW, self.stride, self.padding)
+        col_w = self.w.reshape(-1, FN)
+        self.x = x
+        self.col = col
+        self.col_w = col_w
+
+        out = np.dot(col, col_w) + self.b
+        out = out.reshape(N, out_h, out_w, -1).transpose(0, 3, 1, 2)
+
+        return out
+
+    def backward(self, dout):
+        FN, C, FH, FW = self.w.shape
+        dout = dout.transpose(0, 2, 3, 1).reshape(-1, FN)
+
+        dw_col = np.dot(self.col.T, dout)
+        db_col = np.sum(dout, axis=0)
+        dx_col = np.dot(dout, self.col_w.T)
+        self.dw = dw_col.reshape(FN, C, FH, FW)
+        self.db = db_col
+        dx = col2im(dx_col, self.x.shape, FH, FW, self.stride, self.padding)
+
+        return dx
+
+
+class Pooling:
+    def __init__(self, pool_h, pool_w, stride=1, padding=0):
+        self.pool_h = pool_h
+        self.pool_w = pool_w
+        self.stride = stride
+        self.padding = padding
+        self.x = None
+        self.x_col = None
+        self.arg_max = None
+
+    def forward(self, x):
+        N, C, H, W = x.shape
+        out_h = (H + 2 * self.padding - self.pool_h) // self.stride + 1
+        out_w = (W + 2 * self.padding - self.pool_w) // self.stride + 1
+
+        col = im2col(x, self.pool_h, self.pool_w, self.stride, self.padding)
+        col = col.reshape(-1, self.pool_h * self.pool_w)
+        arg_max = np.argmax(col, axis=1)
+        col_out = np.max(col, axis=1)
+        out = col_out.reshape(N, out_h, out_w, C).transpose(0, 3, 1, 2)
+
+        self.x = x
+        self.x_col = col_out
+        self.arg_max = arg_max
+
+        return out
+
+    def backward(self, dout):
+        col_dout = dout.reshape(-1, self.pool_h * self.pool_w)
+        col_dx = np.zeros((dout.size, self.pool_h * self.pool_w))
+        col_dx[self.arg_max] = col_dout[self.arg_max]
+
+        dx = col2im(col_dx, self.x.shape, self.pool_h, self.pool_w, self.stride, self.padding)
 
         return dx
