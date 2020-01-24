@@ -46,12 +46,17 @@ def read_MNIST():
 
 
 def unpickle(file):
-    import pickle
-    with open(file, 'rb') as fo:
-        dict = pickle.load(fo, encoding='bytes')
-    X = np.array(dict[b'data'])
-    X.reshape((X.shape[0], 3, 32, 32))
-    Y = np.array(dict[b'labels'])
+    if os.path.isfile('../data/pickle_data.npz') and os.path.isfile('../data/pickle_label.npz'):
+        X, Y = np.load('../data/pickle_data.npz')['x'], np.load('../data/pickle_label.npz')['y']
+    else:
+        import pickle
+        with open(file, 'rb') as fo:
+            dict = pickle.load(fo, encoding='bytes')
+        X = np.array(dict[b'data'])
+        X.reshape((X.shape[0], 3, 32, 32))
+        Y = np.array(dict[b'labels'])
+        np.savez('../data/pickle_data.npz', x=X)
+        np.savez('../data/pickle_label.npz', y=Y)
     return X, Y
 
 

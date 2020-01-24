@@ -70,10 +70,6 @@ def main():
     image_size = 60000
     epoch_size = image_size / batch_size
 
-    train_losses = []
-    train_grads = []
-    train_accs = []
-
     train_x, train_y, test_x, test_y = read_MNIST()
     train_x, test_x = normalization(train_x), normalization(test_x)
 
@@ -93,9 +89,6 @@ def main():
         if i % epoch_size == 0:
             train_acc = NN.accuracy(train_x, train_y)
             test_acc = NN.accuracy(test_x, test_y)
-            train_accs.append(train_acc)
-            train_losses.append(loss)
-            train_grads.append(gradients)
             print("----- epoch{} -----".format(i / epoch_size))
             print("loss: {}".format(loss))
             print("train accuracy: {}%".format(train_acc * 100))

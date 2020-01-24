@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import matplotlib.pyplot as plt
 import os
 import sys
 
@@ -17,7 +18,7 @@ class NeuralNet:
             'b2': random_array_generator_normal(hidden_size, output_size)[1]}
         self.layers = OrderedDict()
         self.layers['affine1'] = Affine(w=self.params['w1'], b=self.params['b1'])
-        self.layers['batch_normalization'] = BatchNormalization(beta=0.0, gamma=1.0, delta=1e-7, is_test=False)
+        # self.layers['batch_normalization'] = BatchNormalization()
         self.layers['ReLU'] = ReLU()
         self.layers['affine2'] = Affine(w=self.params['w2'], b=self.params['b2'])
         self.lastLayer = SoftMaxWithLoss()
@@ -55,8 +56,8 @@ class NeuralNet:
         gradients['b1'] = self.layers['affine1'].db
         gradients['w2'] = self.layers['affine2'].dw
         gradients['b2'] = self.layers['affine2'].db
-        gradients['beta'] = self.layers['batch_normalization'].dbeta
-        gradients['gamma'] = self.layers['batch_normalization'].dgamma
+        # gradients['beta'] = self.layers['batch_normalization'].dbeta
+        # gradients['gamma'] = self.layers['batch_normalization'].dgamma
 
         return gradients
 
@@ -75,6 +76,7 @@ def main():
     train_losses = []
     train_grads = []
     train_accs = []
+    test_accs = []
 
     train_x, train_y, test_x, test_y = read_MNIST()
     train_x = normalization(train_x)
@@ -105,12 +107,20 @@ def main():
             train_acc = NN.accuracy(train_x, train_y)
             test_acc = NN.accuracy(test_x, test_y)
             train_accs.append(train_acc)
+            test_accs.append(test_acc)
             train_losses.append(loss)
             train_grads.append(gradients)
             print("----- epoch{} -----".format(i / epoch_size))
             print("loss: {}".format(loss))
             print("train accuracy: {}%".format(train_acc * 100))
             print("test accuracy: {}%".format(test_acc * 100))
+
+    epochs = range(len(train_accs))
+    plt.plot(epochs, train_accs, 'b', label='train_acc')
+    plt.plot(epochs, test_accs, 'r', label='test_acc')
+    plt.title('train and test accuracy Adam')
+    plt.legend(bbox_to_anchor=(1, 0), loc='lower right')
+    plt.show()
 
 
 if __name__ == '__main__':

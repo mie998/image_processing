@@ -51,8 +51,10 @@ class Affine:
 
     def forward(self, x):
         self.input_shape = x.shape
-        self.x = x.reshape(x.shape[0], -1)
-
+        if x.ndim > 2:
+            self.x = x.reshape(x.shape[0], -1)
+        else:
+            self.x = x
         out = np.dot(self.x, self.w) + self.b
 
         return out

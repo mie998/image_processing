@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import matplotlib.pyplot as plt
 import os
 import sys
 
@@ -35,6 +36,7 @@ class ConvolutionalNeuralNet:
         self.layers['pooling'] = Pooling(pool_h=pool_size, pool_w=pool_size, stride=pool_stride, padding=pool_padding)
         self.layers['affine1'] = Affine(w=self.params['w2'], b=self.params['b2'])
         self.layers['relu2'] = ReLU()
+        self.layers['dropout'] = Dropout(drop_rate=0.3, is_test=False)
         self.layers['affine2'] = Affine(w=self.params['w3'], b=self.params['b3'])
         self.lastLayer = SoftMaxWithLoss()
 
@@ -82,7 +84,7 @@ def main():
 
     iteration = 10000
     batch_size = 100
-    hidden_size = 50
+    hidden_size = 100
     output_size = 10
     sifar_img_num = 10000
     sifar_channel_num = 3
@@ -90,8 +92,8 @@ def main():
     epoch_size = sifar_img_num / batch_size
 
     train_losses = []
-    train_grads = []
     train_accs = []
+    test_accs = []
 
     pickle = '../data/cifar-10-batches-py/'
     train_x, train_y = unpickle(pickle + 'data_batch_1')
@@ -101,13 +103,13 @@ def main():
     train_x = train_x.reshape(sifar_img_num, sifar_channel_num, sifar_img_size, sifar_img_size)
     test_x = test_x.reshape(sifar_img_num, sifar_channel_num, sifar_img_size, sifar_img_size)
 
-    # input_shape[1] + padding*2 - filter_size が filter_stride の倍数になるようにパラメータを設定する
+    # img_size + padding*2 - filter_size が filter_stride の倍数になるようにパラメータを設定する
     conv_params = {
-        'filter_num': 4,
-        'filter_size': 4,
-        'filter_stride': 1,
-        'filter_padding': 0,
-        'pool_size': 4,
+        'filter_num': 10,
+        'filter_size': 5,
+        'filter_stride': 2,
+        'filter_padding': 1,
+        'pool_size': 5,
         'pool_stride': 1,
         'pool_padding': 0,
     }
@@ -139,12 +141,18 @@ def main():
             train_acc = CNN.accuracy(train_x, train_y)
             test_acc = CNN.accuracy(test_x, test_y)
             train_accs.append(train_acc)
+            test_accs.append(test_acc)
             train_losses.append(loss)
-            train_grads.append(gradients)
-            print('')
             print("----- epoch{} -----".format(i / epoch_size))
             print("train accuracy: {}%".format(train_acc * 100))
             print("test accuracy: {}%".format(test_acc * 100))
+
+    epochs = range(len(train_accs))
+    plt.plot(epochs, train_accs, 'b', label='train_acc')
+    plt.plot(epochs, test_accs, 'r', label='test_acc')
+    plt.title('train and test accuracy')
+    plt.legend(bbox_to_anchor=(1, 0), loc='lower right')
+    plt.show()
 
 
 if __name__ == '__main__':
