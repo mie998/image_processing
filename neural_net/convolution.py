@@ -69,8 +69,8 @@ class ConvolutionalNeuralNet:
             dout = layer.backward(dout)
 
         gradients = {}
-        gradients['w1'] = self.layers['convolution'].dw
-        gradients['b1'] = self.layers['convolution'].db
+        gradients['w1'] = self.layers['convolution1'].dw
+        gradients['b1'] = self.layers['convolution1'].db
         gradients['w2'] = self.layers['affine1'].dw
         gradients['b2'] = self.layers['affine1'].db
         gradients['w3'] = self.layers['affine2'].dw
